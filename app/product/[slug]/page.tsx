@@ -30,7 +30,10 @@ async function getProductBySlug(slug: string) {
 }
 
 export async function generateMetadata({ params }: any) {
-  const product = await getProductBySlug(params.slug);
+  const rawSlug = params.slug;
+  const cleanSlug = rawSlug.split("-p-")[0];
+
+  const product = await getProductBySlug(cleanSlug);
 
   if (!product) {
     return {
