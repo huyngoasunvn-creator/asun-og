@@ -29,35 +29,31 @@ async function getProductBySlug(slug: string) {
   return snapshot.docs[0].data();
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: any) {
   const rawSlug = params.slug;
-  const cleanSlug = rawSlug.split("-p-")[0];
+  const cleanSlug = rawSlug.split("-p-")[0]; // QUAN TRỌNG
 
   const product = await getProductBySlug(cleanSlug);
 
-  // ❗ Khi không tìm thấy sản phẩm
+  // ❗ KHÔNG CÓ PRODUCT
   if (!product) {
     return {
       title: "Sản phẩm không tồn tại",
-      openGraph: {
-        title: "Sản phẩm không tồn tại",
-        images: ["https://www.asun.vn/og-asun.jpg"],
-      },
     };
   }
 
-  // ✅ Khi có sản phẩm
+  // ✅ CÓ PRODUCT
   return {
     title: product.name,
     openGraph: {
       title: product.name,
       images: [product.images?.[0]],
-      url: `https://www.asun.vn/product/${rawSlug}`,
+      url: `https://www.asun.vn/product/${params.slug}`,
       type: "product",
     },
   };
 }
 
 export default function ProductPage() {
-  return null;
+  return null; // CHỦ ĐÍCH: OG-only
 }
