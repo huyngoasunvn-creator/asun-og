@@ -40,13 +40,34 @@ export async function GET(
   req: Request,
   { params }: { params: { slug: string } }
 ) {
+  const ua = req.headers.get("user-agent") || "";
+  const isBot =
+    ua.includes("facebook") ||
+    ua.includes("Facebot") ||
+    ua.includes("Googlebot") ||
+    ua.includes("Zalo") ||
+    ua.includes("Telegram");
+
   const cleanSlug = params.slug.split("-p-")[0];
   const product = await getProductBySlug(cleanSlug);
 
+  // ❌ Không có sản phẩm → redirect luôn
   if (!product) {
-    return new NextResponse("Not found", { status: 404 });
+    return NextResponse.redirect(
+      `https://www.asun.vn/product/${params.slug}`,
+      302
+    );
   }
 
+  // 👤 NGƯỜI THẬT → redirect về web chính
+  if (!isBot) {
+    return NextResponse.redirect(
+      `https://www.asun.vn/product/${params.slug}`,
+      302
+    );
+  }
+
+  // 🤖 BOT → trả OG HTML
   return new NextResponse(
     `<!doctype html>
 <html>
