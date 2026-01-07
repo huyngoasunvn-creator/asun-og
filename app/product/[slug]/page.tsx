@@ -1,42 +1,31 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCCSfBzCx3InrnMNtSVknr9VSbBmK7OV20",
-  authDomain: "droppii-electrohub.firebaseapp.com",
-  projectId: "droppii-electrohub",
-};
-
-function getFirebase() {
-  if (!getApps().length) {
-    return initializeApp(firebaseConfig);
-  }
-  return getApps()[0];
-}
-
 async function getProductBySlug(slug: string) {
-  const app = getFirebase();
-  const db = getFirestore(app);
+  const projectId = "droppii-electrohub";
 
-  const q = query(
-    collection(db, "products"),
-    where("slug", "==", slug)
-  );
+  const url =
+    `https://firestore.googleapis.com/v1/projects/${projectId}` +
+    `/databases/(default)/documents/products` +
+    `?pageSize=1&filter=slug%3D%3D%22${slug}%22`;
 
-  const snapshot = await getDocs(q);
-  if (snapshot.empty) return null;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) return null;
 
-  return snapshot.docs[0].data();
+  const data = await res.json();
+  if (!data.documents || data.documents.length === 0) return null;
+
+  const fields = data.documents[0].fields;
+
+  return {
+    name: fields.name?.stringValue,
+    image: fields.images?.arrayValue?.values?.[0]?.stringValue,
+  };
 }
 
 export async function generateMetadata({ params }: any) {
   try {
-    const rawSlug = params.slug;
-    const cleanSlug = rawSlug.split("-p-")[0];
-
+    const cleanSlug = params.slug.split("-p-")[0];
     const product = await getProductBySlug(cleanSlug);
 
     if (!product) {
@@ -47,7 +36,7 @@ export async function generateMetadata({ params }: any) {
       title: product.name,
       openGraph: {
         title: product.name,
-        images: [product.images?.[0]],
+        images: [product.image],
         url: `https://www.asun.vn/product/${params.slug}`,
         type: "product",
       },
@@ -58,6 +47,4 @@ export async function generateMetadata({ params }: any) {
   }
 }
 
-export default function ProductPage() {
-  return null;
-}
+export default fun
