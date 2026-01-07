@@ -1,3 +1,9 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/* =========================
+   FIRESTORE FETCH (AN TOÀN)
+========================= */
 async function getProductBySlug(slug: string) {
   try {
     const projectId = "droppii-electrohub";
@@ -41,4 +47,36 @@ async function getProductBySlug(slug: string) {
     console.error("Firestore error:", err);
     return null;
   }
+}
+
+/* =========================
+   SEO / OG METADATA
+========================= */
+export async function generateMetadata({ params }: any) {
+  const cleanSlug = params.slug.split("-p-")[0];
+  const product = await getProductBySlug(cleanSlug);
+
+  if (!product || !product.name) {
+    return {
+      title: "Sản phẩm không tồn tại",
+      robots: { index: false },
+    };
+  }
+
+  return {
+    title: product.name,
+    openGraph: {
+      title: product.name,
+      images: product.image ? [product.image] : [],
+      url: `https://www.asun.vn/product/${params.slug}`,
+      type: "product",
+    },
+  };
+}
+
+/* =========================
+   PAGE (KHÔNG NULL)
+========================= */
+export default function ProductPage() {
+  return <div />;
 }
