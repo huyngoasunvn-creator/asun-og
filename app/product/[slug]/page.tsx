@@ -1,55 +1,44 @@
-import admin from "firebase-admin";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(
-    (process.env.FIREBASE_SERVICE_ACCOUNT as string).replace(/\\n/g, "\n")
-  );
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-}
-
-const db = admin.firestore();
-
 async function getProductBySlug(slug: string) {
-  const snapshot = await db
-    .collection("products")
-    .where("slug", "==", slug)
-    .limit(1)
-    .get();
+  try {
+    const projectId = "droppii-electrohub";
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
 
-  if (snapshot.empty) return null;
+    const body = {
+      structuredQuery: {
+        from: [{ collectionId: "products" }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: "slug" },
+            op: "EQUAL",
+            value: { stringValue: slug },
+          },
+        },
+        limit: 1,
+      },
+    };
 
-  const data = snapshot.docs[0].data();
-  return {
-    name: data.name,
-    image: data.images?.[0],
-  };
-}
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
 
-export async function generateMetadata({ params }: any) {
-  const cleanSlug = params.slug.split("-p-")[0];
-  const product = await getProductBySlug(cleanSlug);
+    const data = await res.json();
 
-  if (!product) {
-    return { title: "Sản phẩm không tồn tại" };
+    if (!Array.isArray(data)) return null;
+    if (!data[0]?.document?.fields) return null;
+
+    const fields = data[0].document.fields;
+
+    return {
+      name: fields.name?.stringValue ?? null,
+      image:
+        fields.images?.arrayValue?.values?.[0]?.stringValue ??
+        null,
+    };
+  } catch (err) {
+    console.error("Firestore error:", err);
+    return null;
   }
-
-  return {
-    title: product.name,
-    openGraph: {
-      title: product.name,
-      images: [product.image],
-      url: `https://www.asun.vn/product/${params.slug}`,
-      type: "product",
-    },
-  };
-}
-
-export default function ProductPage() {
-  return null;
 }
