@@ -47,4 +47,6 @@ export async function generateMetadata({ params }: any) {
   }
 }
 
-export default fun
+export default function ProductPage() {
+  return null;
+}
