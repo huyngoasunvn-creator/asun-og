@@ -48,5 +48,5 @@ export async function generateMetadata({ params }: any) {
 }
 
 export default function ProductPage() {
-  return <div>Product OG</div>;
+  return null;
 }
