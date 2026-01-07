@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(
-    process.env.FIREBASE_SERVICE_ACCOUNT as string
+    (process.env.FIREBASE_SERVICE_ACCOUNT as string).replace(/\\n/g, "\n")
   );
 
   admin.initializeApp({
@@ -16,15 +16,15 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 async function getProductBySlug(slug: string) {
-  const snap = await db
+  const snapshot = await db
     .collection("products")
     .where("slug", "==", slug)
     .limit(1)
     .get();
 
-  if (snap.empty) return null;
+  if (snapshot.empty) return null;
 
-  const data = snap.docs[0].data();
+  const data = snapshot.docs[0].data();
   return {
     name: data.name,
     image: data.images?.[0],
