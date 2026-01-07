@@ -1,41 +1,33 @@
+import admin from "firebase-admin";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function getProductBySlug(slug: string) {
-  const projectId = "droppii-electrohub";
-  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(
+    process.env.FIREBASE_SERVICE_ACCOUNT as string
+  );
 
-  const body = {
-    structuredQuery: {
-      from: [{ collectionId: "products" }],
-      where: {
-        fieldFilter: {
-          field: { fieldPath: "slug" },
-          op: "EQUAL",
-          value: { stringValue: slug },
-        },
-      },
-      limit: 1,
-    },
-  };
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    cache: "no-store",
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
   });
+}
 
-  if (!res.ok) return null;
+const db = admin.firestore();
 
-  const data = await res.json();
-  if (!Array.isArray(data) || !data[0]?.document) return null;
+async function getProductBySlug(slug: string) {
+  const snap = await db
+    .collection("products")
+    .where("slug", "==", slug)
+    .limit(1)
+    .get();
 
-  const fields = data[0].document.fields;
+  if (snap.empty) return null;
 
+  const data = snap.docs[0].data();
   return {
-    name: fields.name?.stringValue,
-    image: fields.images?.arrayValue?.values?.[0]?.stringValue,
+    name: data.name,
+    image: data.images?.[0],
   };
 }
 
