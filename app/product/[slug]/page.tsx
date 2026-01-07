@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 
@@ -30,30 +33,31 @@ async function getProductBySlug(slug: string) {
 }
 
 export async function generateMetadata({ params }: any) {
-  const rawSlug = params.slug;
-  const cleanSlug = rawSlug.split("-p-")[0]; // QUAN TRỌNG
+  try {
+    const rawSlug = params.slug;
+    const cleanSlug = rawSlug.split("-p-")[0];
 
-  const product = await getProductBySlug(cleanSlug);
+    const product = await getProductBySlug(cleanSlug);
 
-  // ❗ KHÔNG CÓ PRODUCT
-  if (!product) {
+    if (!product) {
+      return { title: "Sản phẩm không tồn tại" };
+    }
+
     return {
-      title: "Sản phẩm không tồn tại",
-    };
-  }
-
-  // ✅ CÓ PRODUCT
-  return {
-    title: product.name,
-    openGraph: {
       title: product.name,
-      images: [product.images?.[0]],
-      url: `https://www.asun.vn/product/${params.slug}`,
-      type: "product",
-    },
-  };
+      openGraph: {
+        title: product.name,
+        images: [product.images?.[0]],
+        url: `https://www.asun.vn/product/${params.slug}`,
+        type: "product",
+      },
+    };
+  } catch (e) {
+    console.error("OG ERROR:", e);
+    return { title: "Lỗi hệ thống" };
+  }
 }
 
 export default function ProductPage() {
-  return null; // CHỦ ĐÍCH: OG-only
+  return null;
 }
